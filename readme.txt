@@ -38,3 +38,7 @@ time, and when one was done, the final process would be allocated to a core. Thi
 not executing in parallel with any other. Overall, we see roughly a run time that is double the time required to
 run a third of the computation in serial. Thus, we get a speedup that is slightly better than the serial implementation,
 but not by much.
+
+The slight increase in speed from two processes to four seems a bit strange at first. There are only two cores after all,
+and with more processes comes a greater communication overhead. However, I think the hyperthreading of the CPU may be
+offsetting this overhead and more, thus creating a slight performance increase.
