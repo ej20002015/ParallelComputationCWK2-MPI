@@ -20,6 +20,64 @@
 // as theyt will be changed with different versions for the purposes of assessment.
 #include "cwk2_extra.h"
 
+#include "BroadcastBinaryTree.h"
+
+void broadcastXUsingBinaryTree(int numprocs, int rank, float* x, int N);
+void broadcastXFromParentToChild(int rank, TreeNode* node, float* x, int N);
+
+void performMatrixVectorMultiplication(int numprocs, int rank, float* b, float* A, float* x, int N, int rowsPerProc, float* A_perProc, float* b_perProc)
+{
+	// Broadcast x to all processes
+
+	int isNumprocsAPowerOf2 = numprocs && ((numprocs & (numprocs - 1)) == 0);
+	if (isNumprocsAPowerOf2)
+		broadcastXUsingBinaryTree(numprocs, rank, x, N);
+	else
+		MPI_Bcast(x, N, MPI_FLOAT, 0, MPI_COMM_WORLD);
+
+	// Scatter distinct sets of rows to the processes
+	MPI_Scatter(A, rowsPerProc * N, MPI_FLOAT, A_perProc, rowsPerProc * N, MPI_FLOAT, 0, MPI_COMM_WORLD);
+
+	// Calculate b values for the rows allocated to each process
+
+	int row, col;
+	for (row = 0; row < rowsPerProc; row++)
+	{
+		b_perProc[row] = 0.0f;
+		for (col = 0; col < N; col++)
+			b_perProc[row] += A_perProc[row * N + col] * x[col];
+	}
+
+	// Gather scattered b values into final resulting vector
+	MPI_Gather(b_perProc, rowsPerProc, MPI_FLOAT, b, rowsPerProc, MPI_FLOAT, 0, MPI_COMM_WORLD);
+}
+
+void broadcastXUsingBinaryTree(int numprocs, int rank, float* x, int N)
+{
+	BroadcastBinaryTree* tree = createBroadcastBinaryTree(numprocs);
+
+	broadcastXFromParentToChild(rank, tree->root, x, N);
+}
+
+void broadcastXFromParentToChild(int rank, TreeNode* node, float* x, int N)
+{
+	// Left child we always be the same rank as the parent
+	// node so only need to communicate with the right child
+
+	if (!node->rightChild)
+		return;
+	
+	int sendingRank = node->rank;
+	int receivingRank = node->rightChild->rank;
+
+	if (rank == sendingRank)
+		MPI_Send(x, N, MPI_FLOAT, receivingRank, 0, MPI_COMM_WORLD);
+	if (rank == receivingRank)
+		MPI_Recv(x, N, MPI_FLOAT, sendingRank, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	
+	broadcastXFromParentToChild(rank, node->leftChild, x, N);
+	broadcastXFromParentToChild(rank, node->rightChild, x, N);
+}
 
 //
 //
@@ -63,7 +121,7 @@ int main( int argc, char *argv[] )
 	// Perform matrix-vector multiplication in parallel.
 	//
 
-	// Your solution should go here.
+	performMatrixVectorMultiplication(numprocs, rank, b, A, x, N, rowsPerProc, A_perProc, b_perProc);
 
 	//
 	// Check the answer on rank 0 in serial. Also output the result of the timing.
