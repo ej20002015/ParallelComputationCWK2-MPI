@@ -5,6 +5,7 @@
 
 static void createChildren(TreeNode* node, int currentLevel, int levels);
 static void printNode(const TreeNode* node);
+static void freeNode(TreeNode* node);
 
 BroadcastBinaryTree* createBroadcastBinaryTree(int processCount)
 {
@@ -69,4 +70,21 @@ static void printNode(const TreeNode* node)
 
     printNode(node->leftChild);
     printNode(node->rightChild);
+}
+
+void freeTree(BroadcastBinaryTree* tree)
+{
+    freeNode(tree->root);
+    free(tree);
+}
+
+static void freeNode(TreeNode* node)
+{
+    if (!node)
+        return;
+    
+    freeNode(node->leftChild);
+    freeNode(node->rightChild);
+
+    free(node);
 }

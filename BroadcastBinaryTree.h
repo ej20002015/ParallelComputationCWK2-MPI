@@ -16,3 +16,4 @@ typedef struct BroadcastBinaryTree
 
 BroadcastBinaryTree* createBroadcastBinaryTree(int nodeCount);
 void printTree(const BroadcastBinaryTree* tree);
+void freeTree(BroadcastBinaryTree* tree);

@@ -57,6 +57,8 @@ void broadcastXUsingBinaryTree(int numprocs, int rank, float* x, int N)
 	BroadcastBinaryTree* tree = createBroadcastBinaryTree(numprocs);
 
 	broadcastXFromParentToChild(rank, tree->root, x, N);
+
+	freeTree(tree);
 }
 
 void broadcastXFromParentToChild(int rank, TreeNode* node, float* x, int N)
